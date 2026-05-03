@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Agent</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7f8;
+      --surface: #ffffff;
+      --ink: #17212b;
+      --muted: #5d6d7a;
+      --line: #d7e0e5;
+      --green: #13795b;
+      --teal: #087f8c;
+      --shadow: 0 18px 48px rgba(23, 33, 43, 0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 24px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 18px 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    header {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing: 0;
+      line-height: 1;
+    }
+
+    .tabs {
+      display: inline-grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f0f4f5;
+    }
+
+    button {
+      min-width: 118px;
+      height: 40px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    button.active {
+      background: var(--surface);
+      color: var(--teal);
+      box-shadow: 0 4px 14px rgba(23, 33, 43, 0.10);
+    }
+
+    .frame-wrap {
+      min-height: calc(100vh - 104px);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: calc(100vh - 104px);
+      min-height: 720px;
+      border: 0;
+      background: var(--surface);
+    }
+
+    @media (max-width: 700px) {
+      main { width: min(100vw - 12px, 1180px); padding: 8px 0; }
+      header { align-items: stretch; flex-direction: column; }
+      .tabs { width: 100%; }
+      button { min-width: 0; }
+      .frame-wrap,
+      iframe {
+        height: calc(100vh - 132px);
+        min-height: 720px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Voice Agent</h1>
+      <nav class="tabs" aria-label="Voice agent mode">
+        <button id="geminiTab" class="active" type="button">Gemini</button>
+        <button id="groqTab" type="button">Groq</button>
+      </nav>
+    </header>
+
+    <section class="frame-wrap">
+      <iframe id="modeFrame" src="/gemini" title="Gemini voice agent" allow="microphone; autoplay"></iframe>
+    </section>
+  </main>
+
+  <script>
+    const frame = document.getElementById("modeFrame");
+    const geminiTab = document.getElementById("geminiTab");
+    const groqTab = document.getElementById("groqTab");
+
+    function switchMode(mode) {
+      const isGroq = mode === "groq";
+      geminiTab.classList.toggle("active", !isGroq);
+      groqTab.classList.toggle("active", isGroq);
+      frame.src = isGroq ? "/groq" : "/gemini";
+      frame.title = isGroq ? "Groq voice test" : "Gemini voice agent";
+      history.replaceState(null, "", isGroq ? "/?mode=groq" : "/");
+    }
+
+    geminiTab.addEventListener("click", () => switchMode("gemini"));
+    groqTab.addEventListener("click", () => switchMode("groq"));
+
+    const mode = new URLSearchParams(window.location.search).get("mode");
+    if (mode === "groq") switchMode("groq");
+  </script>
+</body>
+</html>

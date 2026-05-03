@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Groq Voice Test</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7f8;
+      --surface: #ffffff;
+      --ink: #17212b;
+      --muted: #5d6d7a;
+      --line: #d7e0e5;
+      --green: #13795b;
+      --teal: #087f8c;
+      --blue: #2858a8;
+      --amber: #c77700;
+      --red: #b3261e;
+      --shadow: 0 20px 54px rgba(23, 33, 43, 0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1120px, calc(100vw - 28px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 26px 0;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    header,
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .pill {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 14px;
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--muted);
+      box-shadow: 0 0 0 4px rgba(93, 109, 122, 0.12);
+    }
+
+    .pill.live { color: var(--green); }
+    .pill.live .dot {
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(19, 121, 91, 0.14);
+    }
+
+    .pill.error { color: var(--red); }
+    .pill.error .dot {
+      background: var(--red);
+      box-shadow: 0 0 0 4px rgba(179, 38, 30, 0.12);
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .stage {
+      min-height: 570px;
+      padding: clamp(22px, 4vw, 42px);
+      display: grid;
+      align-content: center;
+      gap: 24px;
+      background:
+        linear-gradient(135deg, rgba(40, 88, 168, 0.12), transparent 42%),
+        linear-gradient(315deg, rgba(199, 119, 0, 0.13), transparent 38%),
+        #fbfcfd;
+    }
+
+    .orb {
+      width: min(320px, 72vw);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      justify-self: center;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border: 1px solid #dbe5ea;
+      background: radial-gradient(circle at 48% 42%, #ffffff 0 34%, #edf4f6 35% 100%);
+    }
+
+    .orb::before,
+    .orb::after {
+      content: "";
+      position: absolute;
+      inset: 14%;
+      border-radius: 50%;
+      border: 2px solid rgba(40, 88, 168, 0.25);
+      opacity: 0;
+      transform: scale(0.88);
+    }
+
+    .orb.speaking::before {
+      animation: pulse 1.1s ease-out infinite;
+    }
+
+    .orb.speaking::after {
+      animation: pulse 1.1s ease-out 0.36s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.7; transform: scale(0.84); }
+      100% { opacity: 0; transform: scale(1.18); }
+    }
+
+    .mark {
+      width: 45%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: #fff;
+      font-size: clamp(38px, 8vw, 70px);
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .headline {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .headline strong {
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.08;
+    }
+
+    .headline span {
+      min-height: 24px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      height: 52px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0 20px;
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.46;
+    }
+
+    .primary {
+      min-width: 170px;
+      background: var(--green);
+      color: white;
+    }
+
+    .danger {
+      min-width: 126px;
+      background: #fff;
+      border-color: #e7c4c0;
+      color: var(--red);
+    }
+
+    .secondary {
+      min-width: 154px;
+      background: #fff;
+      border-color: var(--line);
+      color: var(--ink);
+    }
+
+    .secondary.recording {
+      border-color: rgba(179, 38, 30, 0.36);
+      background: rgba(179, 38, 30, 0.08);
+      color: var(--red);
+    }
+
+    .side {
+      border-left: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      min-height: 570px;
+    }
+
+    .panel {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .meter {
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid #cfd9df;
+      background: #eef3f5;
+      overflow: hidden;
+    }
+
+    .meter span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--amber));
+      transition: width 70ms linear;
+    }
+
+    .state {
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 780;
+    }
+
+    .state strong {
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .state.active {
+      border-color: rgba(8, 127, 140, 0.42);
+      background: rgba(8, 127, 140, 0.08);
+      color: var(--teal);
+    }
+
+    .state.agent.active {
+      border-color: rgba(40, 88, 168, 0.38);
+      background: rgba(40, 88, 168, 0.08);
+      color: var(--blue);
+    }
+
+    .transcript {
+      min-height: 94px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfd;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    .transcript strong {
+      color: var(--ink);
+    }
+
+    .test-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 92px;
+      gap: 8px;
+    }
+
+    .test-row input {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--ink);
+      background: #fff;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    .test-row button {
+      min-width: 0;
+      height: 42px;
+      padding: 0 12px;
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .events {
+      padding: 16px 18px;
+      overflow: auto;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      max-height: 260px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.38;
+    }
+
+    .event {
+      display: grid;
+      gap: 2px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(215, 224, 229, 0.72);
+    }
+
+    .event:last-child { border-bottom: 0; }
+    .event strong { color: var(--ink); font-size: 13px; }
+
+    footer {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    code {
+      color: var(--ink);
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+
+    @media (max-width: 860px) {
+      main {
+        width: min(100vw - 18px, 1120px);
+        padding: 16px 0;
+        align-content: start;
+      }
+
+      header,
+      footer {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .stage,
+      .side {
+        min-height: auto;
+      }
+
+      .side {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      button {
+        flex: 1 1 170px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Groq Voice Test</h1>
+      <div id="connectionPill" class="pill"><span class="dot"></span><span>Idle</span></div>
+    </header>
+
+    <section class="shell" aria-label="Groq voice test">
+      <div class="stage">
+        <div id="orb" class="orb" aria-hidden="true">
+          <div class="mark">G</div>
+        </div>
+        <div class="headline">
+          <strong id="mainState">Ready for Groq test</strong>
+          <span id="subState">Mic off</span>
+        </div>
+        <div class="controls">
+          <button id="startBtn" class="primary" type="button">Start Groq call</button>
+          <button id="recordBtn" class="secondary" type="button" disabled>Record</button>
+          <button id="stopBtn" class="danger" type="button" disabled>End</button>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <h2>Your voice</h2>
+          <div class="meter" aria-label="Microphone level"><span id="meter"></span></div>
+          <div id="userState" class="state">
+            <strong>Microphone</strong>
+            <span>Off</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Pipeline</h2>
+          <div id="pipelineState" class="state">
+            <strong>STT -> LLM -> TTS</strong>
+            <span>Waiting</span>
+          </div>
+          <div id="agentState" class="state agent">
+            <strong>Speaker</strong>
+            <span>Silent</span>
+          </div>
+          <div class="transcript"><strong>You:</strong> <span id="userText">-</span></div>
+          <div class="transcript"><strong>Agent:</strong> <span id="agentText">-</span></div>
+          <div class="test-row">
+            <input id="typedQuestion" type="text" placeholder="Type test question" autocomplete="off" />
+            <button id="sendTextBtn" type="button" disabled>Ask</button>
+          </div>
+        </div>
+
+        <div id="events" class="events" aria-live="polite"></div>
+      </aside>
+    </section>
+
+    <footer>
+      <span>Groq STT uploads detected utterances as <code>16 kHz WAV</code>; LLM streams text; TTS returns spoken WAV chunks.</span>
+      <span id="chunks">0 TTS chunks</span>
+    </footer>
+  </main>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const recordBtn = document.getElementById("recordBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const connectionPill = document.getElementById("connectionPill");
+    const mainState = document.getElementById("mainState");
+    const subState = document.getElementById("subState");
+    const userState = document.getElementById("userState");
+    const pipelineState = document.getElementById("pipelineState");
+    const agentState = document.getElementById("agentState");
+    const userText = document.getElementById("userText");
+    const agentText = document.getElementById("agentText");
+    const typedQuestion = document.getElementById("typedQuestion");
+    const sendTextBtn = document.getElementById("sendTextBtn");
+    const meterEl = document.getElementById("meter");
+    const eventsEl = document.getElementById("events");
+    const chunksEl = document.getElementById("chunks");
+    const orb = document.getElementById("orb");
+
+    const INPUT_RATE = 16000;
+    const SILENCE_MS = 850;
+    const MIN_UTTERANCE_MS = 260;
+    const MAX_UTTERANCE_MS = 12000;
+
+    let ws = null;
+    let inputCtx = null;
+    let outputCtx = null;
+    let stream = null;
+    let source = null;
+    let processor = null;
+    let zeroGain = null;
+    let utteranceBuffers = [];
+    let utteranceSamples = 0;
+    let utteranceStartedAt = 0;
+    let lastVoiceAt = 0;
+    let speaking = false;
+    let agentAudioPlaying = false;
+    let agentSpeakingTimer = null;
+    let nextPlayTime = 0;
+    let ttsChunks = 0;
+    let fallbackSpeaking = false;
+    let manualRecording = false;
+
+    function setConnection(label, mode = "") {
+      connectionPill.className = `pill ${mode}`.trim();
+      connectionPill.querySelector("span:last-child").textContent = label;
+    }
+
+    function setMain(title, detail) {
+      mainState.textContent = title;
+      subState.textContent = detail;
+    }
+
+    function setPipeline(label, active = false) {
+      pipelineState.classList.toggle("active", active);
+      pipelineState.querySelector("span").textContent = label;
+    }
+
+    function setUser(active) {
+      if (speaking === active) return;
+      speaking = active;
+      userState.classList.toggle("active", active);
+      userState.querySelector("span").textContent = active ? "Speaking" : "Quiet";
+      if (active) {
+        setMain("You are speaking", "Recording this question");
+        sendDebug("user speaking");
+      } else if (ws && ws.readyState === WebSocket.OPEN && !agentAudioPlaying) {
+        setMain("Listening", "Ask another question");
+        sendDebug("user quiet");
+      }
+    }
+
+    function setManualRecording(active) {
+      manualRecording = active;
+      recordBtn.classList.toggle("recording", active);
+      recordBtn.textContent = active ? "Send voice" : "Record";
+      if (active) {
+        startUtterance(performance.now());
+        setUser(true);
+        setMain("Recording", "Click Send voice when you finish");
+        sendDebug("manual recording started");
+      } else {
+        setUser(false);
+        finishUtterance();
+        sendDebug("manual recording sent");
+      }
+    }
+
+    function setAgent(active) {
+      agentAudioPlaying = active;
+      agentState.classList.toggle("active", active);
+      orb.classList.toggle("speaking", active);
+      agentState.querySelector("span").textContent = active ? "Speaking" : "Silent";
+      if (active) {
+        setMain("Agent is speaking", "Groq TTS audio is playing");
+      } else if (ws && ws.readyState === WebSocket.OPEN) {
+        setMain("Listening", "Ask another question");
+      }
+    }
+
+    function speakFallback(text) {
+      if (!("speechSynthesis" in window) || !text) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.05;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      fallbackSpeaking = true;
+      setAgent(true);
+      utterance.onend = () => {
+        fallbackSpeaking = false;
+        setAgent(false);
+      };
+      utterance.onerror = () => {
+        fallbackSpeaking = false;
+        setAgent(false);
+      };
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function addEvent(label, value) {
+      const row = document.createElement("div");
+      row.className = "event";
+      const title = document.createElement("strong");
+      title.textContent = label;
+      const text = document.createElement("span");
+      text.textContent = value;
+      row.append(title, text);
+      eventsEl.prepend(row);
+      while (eventsEl.children.length > 18) {
+        eventsEl.lastElementChild.remove();
+      }
+    }
+
+    function wsUrl() {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      return `${protocol}//${window.location.host}/ws/groq`;
+    }
+
+    function sendDebug(message) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: "debug", message }));
+    }
+
+    function downsample(float32, inputRate, outputRate) {
+      if (inputRate === outputRate) return float32.slice();
+      const ratio = inputRate / outputRate;
+      const outLength = Math.floor(float32.length / ratio);
+      const out = new Float32Array(outLength);
+      let inputOffset = 0;
+
+      for (let i = 0; i < outLength; i++) {
+        const nextOffset = Math.round((i + 1) * ratio);
+        let sum = 0;
+        let count = 0;
+        for (let j = inputOffset; j < nextOffset && j < float32.length; j++) {
+          sum += float32[j];
+          count++;
+        }
+        out[i] = count ? sum / count : 0;
+        inputOffset = nextOffset;
+      }
+
+      return out;
+    }
+
+    function floatToPcm16(float32) {
+      const pcm = new Int16Array(float32.length);
+      for (let i = 0; i < float32.length; i++) {
+        const s = Math.max(-1, Math.min(1, float32[i]));
+        pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+      return pcm;
+    }
+
+    function mergePcm(buffers, totalSamples) {
+      const merged = new Int16Array(totalSamples);
+      let offset = 0;
+      for (const buffer of buffers) {
+        merged.set(buffer, offset);
+        offset += buffer.length;
+      }
+      return merged;
+    }
+
+    function encodeWav(pcm, sampleRate) {
+      const buffer = new ArrayBuffer(44 + pcm.length * 2);
+      const view = new DataView(buffer);
+
+      writeString(view, 0, "RIFF");
+      view.setUint32(4, 36 + pcm.length * 2, true);
+      writeString(view, 8, "WAVE");
+      writeString(view, 12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(view, 36, "data");
+      view.setUint32(40, pcm.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < pcm.length; i++) {
+        view.setInt16(offset, pcm[i], true);
+        offset += 2;
+      }
+      return buffer;
+    }
+
+    function writeString(view, offset, value) {
+      for (let i = 0; i < value.length; i++) {
+        view.setUint8(offset + i, value.charCodeAt(i));
+      }
+    }
+
+    function startUtterance(now) {
+      utteranceBuffers = [];
+      utteranceSamples = 0;
+      utteranceStartedAt = now;
+      lastVoiceAt = now;
+      userText.textContent = "...";
+      agentText.textContent = "";
+      setPipeline("Recording", true);
+    }
+
+    function addAudioFrame(pcm) {
+      utteranceBuffers.push(new Int16Array(pcm));
+      utteranceSamples += pcm.length;
+    }
+
+    function finishUtterance() {
+      const durationMs = (utteranceSamples / INPUT_RATE) * 1000;
+      if (durationMs < MIN_UTTERANCE_MS) {
+        utteranceBuffers = [];
+        utteranceSamples = 0;
+        return;
+      }
+
+      const pcm = mergePcm(utteranceBuffers, utteranceSamples);
+      const wav = encodeWav(pcm, INPUT_RATE);
+      ws.send(wav);
+      addEvent("Audio sent", `${Math.round(durationMs)} ms`);
+      setPipeline("Transcribing", true);
+      setMain("Transcribing", "Groq Whisper is reading your voice");
+      utteranceBuffers = [];
+      utteranceSamples = 0;
+    }
+
+    async function playWav(arrayBuffer) {
+      if (!outputCtx) return;
+      const decoded = await outputCtx.decodeAudioData(arrayBuffer.slice(0));
+      const node = outputCtx.createBufferSource();
+      node.buffer = decoded;
+      node.connect(outputCtx.destination);
+      const startAt = Math.max(outputCtx.currentTime + 0.03, nextPlayTime);
+      node.start(startAt);
+      nextPlayTime = startAt + decoded.duration;
+
+      setAgent(true);
+      window.clearTimeout(agentSpeakingTimer);
+      const remainingMs = Math.max(220, (nextPlayTime - outputCtx.currentTime) * 1000 + 100);
+      agentSpeakingTimer = window.setTimeout(() => setAgent(false), remainingMs);
+    }
+
+    async function start() {
+      startBtn.disabled = true;
+      ttsChunks = 0;
+      chunksEl.textContent = "0 TTS chunks";
+      userText.textContent = "-";
+      agentText.textContent = "-";
+      setConnection("Opening");
+      setMain("Opening Groq call", "Waiting for microphone");
+      addEvent("Call", "Opening");
+
+      try {
+        inputCtx = new AudioContext();
+        outputCtx = new AudioContext();
+        await outputCtx.resume();
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+
+        ws = new WebSocket(wsUrl());
+        ws.binaryType = "arraybuffer";
+
+        ws.onopen = () => {
+          setConnection("Live", "live");
+          setMain("Listening", "Ask a question");
+          userState.querySelector("span").textContent = "Quiet";
+          setPipeline("Waiting", false);
+          stopBtn.disabled = false;
+          sendTextBtn.disabled = false;
+          recordBtn.disabled = false;
+          addEvent("Connected", new Date().toLocaleTimeString());
+          sendDebug("groq call started");
+
+          source = inputCtx.createMediaStreamSource(stream);
+          processor = inputCtx.createScriptProcessor(4096, 1, 1);
+          zeroGain = inputCtx.createGain();
+          zeroGain.gain.value = 0;
+
+          processor.onaudioprocess = (event) => {
+            if (!ws || ws.readyState !== WebSocket.OPEN || agentAudioPlaying || fallbackSpeaking) return;
+            const input = event.inputBuffer.getChannelData(0);
+            let peak = 0;
+            let sum = 0;
+            for (let i = 0; i < input.length; i++) {
+              const value = Math.abs(input[i]);
+              peak = Math.max(peak, value);
+              sum += value * value;
+            }
+
+            const rms = Math.sqrt(sum / input.length);
+            const active = rms > 0.012 || peak > 0.06;
+            const now = performance.now();
+            meterEl.style.width = `${Math.min(100, Math.max(peak * 180, rms * 340))}%`;
+            setUser(manualRecording || active);
+
+            const pcm = floatToPcm16(downsample(input, inputCtx.sampleRate, INPUT_RATE));
+            if ((active || manualRecording) && utteranceSamples === 0) {
+              startUtterance(now);
+            }
+            if (active) {
+              lastVoiceAt = now;
+            }
+            if (manualRecording || utteranceSamples > 0) {
+              addAudioFrame(pcm);
+            }
+
+            const tooQuiet = !manualRecording && utteranceSamples > 0 && now - lastVoiceAt > SILENCE_MS;
+            const tooLong = utteranceSamples > 0 && now - utteranceStartedAt > MAX_UTTERANCE_MS;
+            if (tooQuiet || tooLong) {
+              manualRecording = false;
+              recordBtn.classList.remove("recording");
+              recordBtn.textContent = "Record";
+              finishUtterance();
+            }
+          };
+
+          source.connect(processor);
+          processor.connect(zeroGain);
+          zeroGain.connect(inputCtx.destination);
+        };
+
+        ws.onmessage = async (event) => {
+          if (typeof event.data === "string") {
+            const msg = JSON.parse(event.data);
+            handleServerMessage(msg);
+            return;
+          }
+          const buffer = event.data instanceof Blob ? await event.data.arrayBuffer() : event.data;
+          ttsChunks++;
+          chunksEl.textContent = `${ttsChunks} TTS chunks`;
+          await playWav(buffer);
+        };
+
+        ws.onerror = () => {
+          setConnection("Socket error", "error");
+          setMain("Connection error", "Check terminal debug");
+          addEvent("Socket", "Error");
+        };
+
+        ws.onclose = () => {
+          if (!stopBtn.disabled) {
+            addEvent("Disconnected", new Date().toLocaleTimeString());
+            setConnection("Closed");
+            setMain("Call ended", "Mic off");
+          }
+          cleanup({ preserveStatus: true });
+        };
+      } catch (error) {
+        addEvent("Error", error.message || String(error));
+        setConnection("Error", "error");
+        setMain("Could not start", "Check browser permission and terminal debug");
+        cleanup({ preserveStatus: true });
+      }
+    }
+
+    function handleServerMessage(msg) {
+      const type = msg.type || "Message";
+      const message = msg.message || "";
+      addEvent(type, message);
+
+      if (type === "Session") {
+        setPipeline("Waiting", false);
+      } else if (type === "STT") {
+        setPipeline("Transcribing", true);
+        setMain("Transcribing", "Groq STT is reading your voice");
+      } else if (type === "UserText") {
+        userText.textContent = message;
+        agentText.textContent = "";
+        setPipeline("LLM streaming", true);
+        setMain("Thinking", "Groq LLM is streaming text");
+      } else if (type === "TextDelta") {
+        if (agentText.textContent === "-") agentText.textContent = "";
+        agentText.textContent += message;
+      } else if (type === "TTS") {
+        setPipeline("TTS speaking", true);
+      } else if (type === "TTSFallback") {
+        setPipeline("Browser TTS fallback", true);
+        speakFallback(message);
+      } else if (type === "Done") {
+        setPipeline("Waiting", false);
+        if (!agentAudioPlaying) setMain("Listening", "Ask another question");
+      } else if (type === "Busy") {
+        setPipeline("Busy", true);
+      } else if (type === "Error") {
+        setConnection("Error", "error");
+        setPipeline("Error", false);
+        setMain("Groq error", "Check terminal debug");
+      }
+    }
+
+    function cleanup(options = {}) {
+      stopBtn.disabled = true;
+      startBtn.disabled = false;
+      sendTextBtn.disabled = true;
+      recordBtn.disabled = true;
+      recordBtn.classList.remove("recording");
+      recordBtn.textContent = "Record";
+      meterEl.style.width = "0%";
+      speaking = false;
+      agentAudioPlaying = false;
+      fallbackSpeaking = false;
+      manualRecording = false;
+      utteranceBuffers = [];
+      utteranceSamples = 0;
+      userState.classList.remove("active");
+      agentState.classList.remove("active");
+      pipelineState.classList.remove("active");
+      orb.classList.remove("speaking");
+      userState.querySelector("span").textContent = "Off";
+      agentState.querySelector("span").textContent = "Silent";
+      pipelineState.querySelector("span").textContent = "Waiting";
+      window.clearTimeout(agentSpeakingTimer);
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      if (processor) processor.disconnect();
+      if (source) source.disconnect();
+      if (zeroGain) zeroGain.disconnect();
+      if (stream) stream.getTracks().forEach((track) => track.stop());
+      if (inputCtx) inputCtx.close();
+      if (outputCtx) outputCtx.close();
+
+      processor = null;
+      source = null;
+      zeroGain = null;
+      stream = null;
+      inputCtx = null;
+      outputCtx = null;
+      nextPlayTime = 0;
+
+      if (!ws || ws.readyState === WebSocket.CLOSED) {
+        ws = null;
+      }
+      if (!options.preserveStatus) {
+        setConnection("Idle");
+        setMain("Ready for Groq test", "Mic off");
+      }
+    }
+
+    function stop() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        sendDebug("groq call ended by user");
+        ws.send(JSON.stringify({ type: "stop" }));
+        ws.close(1000, "user stopped");
+      }
+      cleanup();
+      addEvent("Call", `Ended ${new Date().toLocaleTimeString()}`);
+    }
+
+    startBtn.addEventListener("click", start);
+    stopBtn.addEventListener("click", stop);
+    recordBtn.addEventListener("click", () => {
+      if (!ws || ws.readyState !== WebSocket.OPEN || agentAudioPlaying || fallbackSpeaking) return;
+      setManualRecording(!manualRecording);
+    });
+    sendTextBtn.addEventListener("click", () => {
+      const question = typedQuestion.value.trim();
+      if (!question || !ws || ws.readyState !== WebSocket.OPEN) return;
+      typedQuestion.value = "";
+      agentText.textContent = "";
+      setPipeline("LLM streaming", true);
+      setMain("Thinking", "Groq LLM is streaming text");
+      ws.send(JSON.stringify({ type: "ask_text", message: question }));
+    });
+    typedQuestion.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") sendTextBtn.click();
+    });
+    addEvent("Ready", window.location.host);
+  </script>
+</body>
+</html>

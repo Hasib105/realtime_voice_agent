@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Agent</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --surface: #ffffff;
+      --ink: #172026;
+      --muted: #61707a;
+      --line: #d9e0dc;
+      --green: #13795b;
+      --teal: #087f8c;
+      --amber: #c77700;
+      --red: #b3261e;
+      --blue: #2858a8;
+      --shadow: 0 20px 54px rgba(23, 32, 38, 0.12);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1060px, calc(100vw - 28px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 26px 0;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .pill {
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 14px;
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--muted);
+      box-shadow: 0 0 0 4px rgba(97, 112, 122, 0.12);
+    }
+
+    .pill.live { color: var(--green); }
+    .pill.live .dot {
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(19, 121, 91, 0.14);
+    }
+
+    .pill.error { color: var(--red); }
+    .pill.error .dot {
+      background: var(--red);
+      box-shadow: 0 0 0 4px rgba(179, 38, 30, 0.12);
+    }
+
+    .call {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .stage {
+      min-height: 520px;
+      padding: clamp(22px, 4vw, 42px);
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 26px;
+      background:
+        linear-gradient(135deg, rgba(8, 127, 140, 0.12), transparent 42%),
+        linear-gradient(315deg, rgba(199, 119, 0, 0.14), transparent 38%),
+        #fbfcfa;
+    }
+
+    .agent-ring {
+      width: min(340px, 72vw);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border: 1px solid #dce5e0;
+      background: radial-gradient(circle at 48% 42%, #ffffff 0 34%, #edf5f1 35% 100%);
+    }
+
+    .agent-ring::before,
+    .agent-ring::after {
+      content: "";
+      position: absolute;
+      inset: 14%;
+      border-radius: 50%;
+      border: 2px solid rgba(8, 127, 140, 0.22);
+      transform: scale(0.92);
+      opacity: 0;
+    }
+
+    .agent-ring.agent-speaking::before {
+      animation: pulse 1.15s ease-out infinite;
+    }
+
+    .agent-ring.agent-speaking::after {
+      animation: pulse 1.15s ease-out 0.38s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.7; transform: scale(0.84); }
+      100% { opacity: 0; transform: scale(1.18); }
+    }
+
+    .face {
+      width: 45%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: #fff;
+      font-size: clamp(42px, 8vw, 72px);
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .call-state {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+
+    .call-state strong {
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.08;
+    }
+
+    .call-state span {
+      min-height: 24px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      height: 52px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0 20px;
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.46;
+    }
+
+    .primary {
+      min-width: 150px;
+      background: var(--green);
+      color: white;
+    }
+
+    .danger {
+      min-width: 126px;
+      background: #fff;
+      border-color: #e7c4c0;
+      color: var(--red);
+    }
+
+    .side {
+      border-left: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr);
+      min-height: 520px;
+    }
+
+    .panel {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .panel h2 {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .meter {
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid #cfd9d4;
+      background: #eef2ef;
+      overflow: hidden;
+    }
+
+    .meter span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--amber));
+      transition: width 70ms linear;
+    }
+
+    .states {
+      display: grid;
+      gap: 10px;
+    }
+
+    .state {
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .state strong {
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .state.active {
+      border-color: rgba(8, 127, 140, 0.42);
+      background: rgba(8, 127, 140, 0.08);
+      color: var(--teal);
+    }
+
+    .state.agent.active {
+      border-color: rgba(40, 88, 168, 0.38);
+      background: rgba(40, 88, 168, 0.08);
+      color: var(--blue);
+    }
+
+    .events {
+      padding: 16px 18px;
+      overflow: auto;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      max-height: 290px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.38;
+    }
+
+    .event {
+      display: grid;
+      gap: 2px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(217, 224, 220, 0.72);
+    }
+
+    .event:last-child { border-bottom: 0; }
+    .event strong { color: var(--ink); font-size: 13px; }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    code {
+      color: var(--ink);
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
+
+    @media (max-width: 820px) {
+      main {
+        width: min(100vw - 18px, 1060px);
+        padding: 16px 0;
+        align-content: start;
+      }
+
+      header,
+      footer {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .call {
+        grid-template-columns: 1fr;
+      }
+
+      .stage,
+      .side {
+        min-height: auto;
+      }
+
+      .side {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      button {
+        flex: 1 1 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Voice Agent</h1>
+      <div id="connectionPill" class="pill"><span class="dot"></span><span>Idle</span></div>
+    </header>
+
+    <section class="call" aria-label="Voice call">
+      <div class="stage">
+        <div id="agentRing" class="agent-ring" aria-hidden="true">
+          <div class="face">A</div>
+        </div>
+        <div class="call-state">
+          <strong id="mainState">Ready to call</strong>
+          <span id="subState">Mic off</span>
+        </div>
+        <div class="controls">
+          <button id="startBtn" class="primary" type="button">Start call</button>
+          <button id="stopBtn" class="danger" type="button" disabled>End</button>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <h2>Your voice</h2>
+          <div class="meter" aria-label="Microphone level"><span id="meter"></span></div>
+          <div id="userState" class="state">
+            <strong>Microphone</strong>
+            <span>Off</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Agent voice</h2>
+          <div class="states">
+            <div id="agentState" class="state agent">
+              <strong>Speaker</strong>
+              <span>Silent</span>
+            </div>
+            <div id="socketState" class="state">
+              <strong>Connection</strong>
+              <span>Closed</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="events" class="events" aria-live="polite"></div>
+      </aside>
+    </section>
+
+    <footer>
+      <span>Input <code>16 kHz PCM</code></span>
+      <span id="chunks">0 agent audio chunks</span>
+    </footer>
+  </main>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const connectionPill = document.getElementById("connectionPill");
+    const mainState = document.getElementById("mainState");
+    const subState = document.getElementById("subState");
+    const userState = document.getElementById("userState");
+    const agentState = document.getElementById("agentState");
+    const socketState = document.getElementById("socketState");
+    const agentRing = document.getElementById("agentRing");
+    const meterEl = document.getElementById("meter");
+    const eventsEl = document.getElementById("events");
+    const chunksEl = document.getElementById("chunks");
+
+    let ws = null;
+    let inputCtx = null;
+    let outputCtx = null;
+    let stream = null;
+    let source = null;
+    let processor = null;
+    let zeroGain = null;
+    let nextPlayTime = 0;
+    let responseChunks = 0;
+    let speaking = false;
+    let agentSpeakingTimer = null;
+
+    function setConnection(label, mode = "") {
+      connectionPill.className = `pill ${mode}`.trim();
+      connectionPill.querySelector("span:last-child").textContent = label;
+      socketState.querySelector("span").textContent = label;
+      socketState.classList.toggle("active", mode === "live");
+    }
+
+    function setMain(title, detail) {
+      mainState.textContent = title;
+      subState.textContent = detail;
+    }
+
+    function setUserSpeaking(active) {
+      if (speaking === active) return;
+      speaking = active;
+      userState.classList.toggle("active", active);
+      userState.querySelector("span").textContent = active ? "Speaking" : "Quiet";
+      setMain(active ? "You are speaking" : "Listening", active ? "Agent can hear your voice" : "Mic is open");
+      sendDebug(active ? "user speaking" : "user quiet");
+    }
+
+    function setAgentSpeaking(active) {
+      agentState.classList.toggle("active", active);
+      agentRing.classList.toggle("agent-speaking", active);
+      agentState.querySelector("span").textContent = active ? "Speaking" : "Silent";
+      if (active) {
+        setMain("Agent is speaking", "Audio is playing");
+      } else if (ws && ws.readyState === WebSocket.OPEN) {
+        setMain(speaking ? "You are speaking" : "Listening", speaking ? "Agent can hear your voice" : "Mic is open");
+      }
+    }
+
+    function addEvent(label, value) {
+      const row = document.createElement("div");
+      row.className = "event";
+      const title = document.createElement("strong");
+      title.textContent = label;
+      const text = document.createElement("span");
+      text.textContent = value;
+      row.append(title, text);
+      eventsEl.prepend(row);
+      while (eventsEl.children.length > 18) {
+        eventsEl.lastElementChild.remove();
+      }
+    }
+
+    function sendDebug(message) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      ws.send(JSON.stringify({ type: "debug", message }));
+    }
+
+    function wsUrl() {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      return `${protocol}//${window.location.host}/ws/gemini`;
+    }
+
+    function downsample(float32, inputRate, outputRate) {
+      if (inputRate === outputRate) return float32.slice();
+      const ratio = inputRate / outputRate;
+      const outLength = Math.floor(float32.length / ratio);
+      const out = new Float32Array(outLength);
+      let inputOffset = 0;
+
+      for (let i = 0; i < outLength; i++) {
+        const nextOffset = Math.round((i + 1) * ratio);
+        let sum = 0;
+        let count = 0;
+        for (let j = inputOffset; j < nextOffset && j < float32.length; j++) {
+          sum += float32[j];
+          count++;
+        }
+        out[i] = count ? sum / count : 0;
+        inputOffset = nextOffset;
+      }
+
+      return out;
+    }
+
+    function floatToPcm16(float32) {
+      const pcm = new Int16Array(float32.length);
+      for (let i = 0; i < float32.length; i++) {
+        const s = Math.max(-1, Math.min(1, float32[i]));
+        pcm[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+      return pcm;
+    }
+
+    function playPcm24k(arrayBuffer) {
+      if (!outputCtx) return;
+      const pcm = new Int16Array(arrayBuffer);
+      if (!pcm.length) return;
+
+      const audioBuffer = outputCtx.createBuffer(1, pcm.length, 24000);
+      const channel = audioBuffer.getChannelData(0);
+      for (let i = 0; i < pcm.length; i++) {
+        channel[i] = Math.max(-1, Math.min(1, pcm[i] / 32768));
+      }
+
+      const node = outputCtx.createBufferSource();
+      node.buffer = audioBuffer;
+      node.connect(outputCtx.destination);
+      const startAt = Math.max(outputCtx.currentTime + 0.03, nextPlayTime);
+      node.start(startAt);
+      nextPlayTime = startAt + audioBuffer.duration;
+
+      setAgentSpeaking(true);
+      window.clearTimeout(agentSpeakingTimer);
+      const remainingMs = Math.max(180, (nextPlayTime - outputCtx.currentTime) * 1000 + 80);
+      agentSpeakingTimer = window.setTimeout(() => setAgentSpeaking(false), remainingMs);
+    }
+
+    async function start() {
+      startBtn.disabled = true;
+      responseChunks = 0;
+      chunksEl.textContent = "0 agent audio chunks";
+      setConnection("Opening");
+      setMain("Opening call", "Waiting for microphone");
+      addEvent("Call", "Opening");
+
+      try {
+        inputCtx = new AudioContext();
+        outputCtx = new AudioContext();
+        await outputCtx.resume();
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+
+        ws = new WebSocket(wsUrl());
+        ws.binaryType = "arraybuffer";
+
+        ws.onopen = () => {
+          setConnection("Live", "live");
+          setMain("Listening", "Mic is open");
+          userState.querySelector("span").textContent = "Quiet";
+          stopBtn.disabled = false;
+          addEvent("Connected", new Date().toLocaleTimeString());
+          sendDebug("call started");
+
+          source = inputCtx.createMediaStreamSource(stream);
+          processor = inputCtx.createScriptProcessor(4096, 1, 1);
+          zeroGain = inputCtx.createGain();
+          zeroGain.gain.value = 0;
+
+          processor.onaudioprocess = (event) => {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            const input = event.inputBuffer.getChannelData(0);
+            let peak = 0;
+            let sum = 0;
+            for (let i = 0; i < input.length; i++) {
+              const value = Math.abs(input[i]);
+              peak = Math.max(peak, value);
+              sum += value * value;
+            }
+            const rms = Math.sqrt(sum / input.length);
+            meterEl.style.width = `${Math.min(100, Math.max(peak * 180, rms * 340))}%`;
+            setUserSpeaking(rms > 0.018 || peak > 0.09);
+
+            const resampled = downsample(input, inputCtx.sampleRate, 16000);
+            const pcm = floatToPcm16(resampled);
+            ws.send(pcm.buffer);
+          };
+
+          source.connect(processor);
+          processor.connect(zeroGain);
+          zeroGain.connect(inputCtx.destination);
+        };
+
+        ws.onmessage = async (event) => {
+          if (typeof event.data === "string") {
+            const msg = JSON.parse(event.data);
+            addEvent(msg.type || "Message", msg.message || "");
+            return;
+          }
+
+          const buffer = event.data instanceof Blob ? await event.data.arrayBuffer() : event.data;
+          responseChunks++;
+          chunksEl.textContent = `${responseChunks} agent audio chunks`;
+          playPcm24k(buffer);
+        };
+
+        ws.onerror = () => {
+          setConnection("Socket error", "error");
+          setMain("Connection error", "Check terminal debug");
+          addEvent("Socket", "Error");
+        };
+
+        ws.onclose = () => {
+          if (!stopBtn.disabled) {
+            addEvent("Disconnected", new Date().toLocaleTimeString());
+            setConnection("Closed");
+            setMain("Call ended", "Mic off");
+          }
+          cleanup({ preserveStatus: true });
+        };
+      } catch (error) {
+        addEvent("Error", error.message || String(error));
+        setConnection("Error", "error");
+        setMain("Could not start", "Check browser permission and terminal debug");
+        cleanup({ preserveStatus: true });
+      }
+    }
+
+    function cleanup(options = {}) {
+      stopBtn.disabled = true;
+      startBtn.disabled = false;
+      meterEl.style.width = "0%";
+      speaking = false;
+      userState.classList.remove("active");
+      agentState.classList.remove("active");
+      agentRing.classList.remove("agent-speaking");
+      userState.querySelector("span").textContent = "Off";
+      agentState.querySelector("span").textContent = "Silent";
+      window.clearTimeout(agentSpeakingTimer);
+
+      if (processor) processor.disconnect();
+      if (source) source.disconnect();
+      if (zeroGain) zeroGain.disconnect();
+      if (stream) stream.getTracks().forEach((track) => track.stop());
+      if (inputCtx) inputCtx.close();
+      if (outputCtx) outputCtx.close();
+
+      processor = null;
+      source = null;
+      zeroGain = null;
+      stream = null;
+      inputCtx = null;
+      outputCtx = null;
+      nextPlayTime = 0;
+
+      if (!ws || ws.readyState === WebSocket.CLOSED) {
+        ws = null;
+      }
+      if (!options.preserveStatus) {
+        setConnection("Idle");
+        setMain("Ready to call", "Mic off");
+      }
+    }
+
+    function stop() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        sendDebug("call ended by user");
+        ws.send(JSON.stringify({ type: "stop" }));
+        ws.close(1000, "user stopped");
+      }
+      cleanup();
+      addEvent("Call", `Ended ${new Date().toLocaleTimeString()}`);
+    }
+
+    startBtn.addEventListener("click", start);
+    stopBtn.addEventListener("click", stop);
+    addEvent("Ready", window.location.host);
+  </script>
+</body>
+</html>
