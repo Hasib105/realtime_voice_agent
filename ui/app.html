@@ -14,6 +14,7 @@
       --line: #d7e0e5;
       --green: #13795b;
       --teal: #087f8c;
+      --blue: #2858a8;
       --shadow: 0 18px 48px rgba(23, 33, 43, 0.12);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
@@ -38,23 +39,38 @@
     }
 
     header {
-      min-height: 62px;
+      min-height: 78px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 14px;
-      padding: 10px 12px;
+      padding: 12px 14px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: var(--surface);
       box-shadow: var(--shadow);
     }
 
-    h1 {
+    .title {
+      display: grid;
+      gap: 6px;
+    }
+
+    h1,
+    p {
       margin: 0;
+    }
+
+    h1 {
       font-size: clamp(22px, 3vw, 34px);
       letter-spacing: 0;
       line-height: 1;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
     }
 
     .tabs {
@@ -85,6 +101,39 @@
       box-shadow: 0 4px 14px rgba(23, 33, 43, 0.10);
     }
 
+    .mode-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mode-card {
+      min-height: 82px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: var(--surface);
+      display: grid;
+      align-content: center;
+      gap: 6px;
+    }
+
+    .mode-card strong {
+      font-size: 15px;
+    }
+
+    .mode-card span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 650;
+    }
+
+    .mode-card.active {
+      border-color: rgba(8, 127, 140, 0.45);
+      background: rgba(8, 127, 140, 0.06);
+    }
+
     .frame-wrap {
       min-height: calc(100vh - 104px);
       border: 1px solid var(--line);
@@ -107,6 +156,7 @@
       main { width: min(100vw - 12px, 1180px); padding: 8px 0; }
       header { align-items: stretch; flex-direction: column; }
       .tabs { width: 100%; }
+      .mode-strip { grid-template-columns: 1fr; }
       button { min-width: 0; }
       .frame-wrap,
       iframe {
@@ -119,12 +169,26 @@
 <body>
   <main>
     <header>
-      <h1>Voice Agent</h1>
+      <div class="title">
+        <h1>Voice Agent</h1>
+        <p id="modeSummary">Gemini is native realtime audio: microphone in, spoken answer out.</p>
+      </div>
       <nav class="tabs" aria-label="Voice agent mode">
         <button id="geminiTab" class="active" type="button">Gemini</button>
         <button id="groqTab" type="button">Groq</button>
       </nav>
     </header>
+
+    <section class="mode-strip" aria-label="Mode details">
+      <div id="geminiCard" class="mode-card active">
+        <strong>Gemini Live</strong>
+        <span>Realtime audio-to-audio call using Gemini Live over one WebSocket.</span>
+      </div>
+      <div id="groqCard" class="mode-card">
+        <strong>Groq Test</strong>
+        <span>Voice clip to Groq STT, streaming Groq LLM answer, browser speech output.</span>
+      </div>
+    </section>
 
     <section class="frame-wrap">
       <iframe id="modeFrame" src="/gemini" title="Gemini voice agent" allow="microphone; autoplay"></iframe>
@@ -135,13 +199,21 @@
     const frame = document.getElementById("modeFrame");
     const geminiTab = document.getElementById("geminiTab");
     const groqTab = document.getElementById("groqTab");
+    const geminiCard = document.getElementById("geminiCard");
+    const groqCard = document.getElementById("groqCard");
+    const modeSummary = document.getElementById("modeSummary");
 
     function switchMode(mode) {
       const isGroq = mode === "groq";
       geminiTab.classList.toggle("active", !isGroq);
       groqTab.classList.toggle("active", isGroq);
+      geminiCard.classList.toggle("active", !isGroq);
+      groqCard.classList.toggle("active", isGroq);
       frame.src = isGroq ? "/groq" : "/gemini";
       frame.title = isGroq ? "Groq voice test" : "Gemini voice agent";
+      modeSummary.textContent = isGroq
+        ? "Groq uses separate STT, streaming LLM, and speech output stages."
+        : "Gemini is native realtime audio: microphone in, spoken answer out.";
       history.replaceState(null, "", isGroq ? "/?mode=groq" : "/");
     }
 
